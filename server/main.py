@@ -1,36 +1,189 @@
+import json
+import os
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="PayamYar Server")
+
+app = FastAPI(
+    title="PayamYar Server"
+)
+
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
-# کاربران آنلاین
+
+# =========================================================
+# مسیر ذخیره اطلاعات
+# =========================================================
+
+DATA_FILE = "payamyar_data.json"
+
+
+# =========================================================
+# اطلاعات آنلاین
+# =========================================================
+
 users = {}
 
+
+# =========================================================
 # گروه‌ها
+# =========================================================
+
 groups = {}
 
+
+# =========================================================
 # دعوت‌های منتظر
-# username -> list of invitations
+# =========================================================
+
 pending_invites = {}
 
 
+# =========================================================
+# بارگذاری اطلاعات
+# =========================================================
+
+def load_data():
+
+    global groups
+    global pending_invites
+
+    if not os.path.exists(DATA_FILE):
+
+        groups = {}
+        pending_invites = {}
+
+        return
+
+    try:
+
+        with open(
+            DATA_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            data = json.load(file)
+
+        saved_groups = data.get(
+            "groups",
+            {}
+        )
+
+        groups = {}
+
+        for group_name, group_data in saved_groups.items():
+
+            groups[group_name] = {
+                "creator": group_data.get(
+                    "creator",
+                    ""
+                ),
+                "members": set(
+                    group_data.get(
+                        "members",
+                        []
+                    )
+                )
+            }
+
+        pending_invites = data.get(
+            "pending_invites",
+            {}
+        )
+
+    except Exception as e:
+
+        print(
+            f"Load data error: {e}"
+        )
+
+        groups = {}
+        pending_invites = {}
+
+
+# =========================================================
+# ذخیره اطلاعات
+# =========================================================
+
+def save_data():
+
+    try:
+
+        data = {
+            "groups": {},
+            "pending_invites": pending_invites
+        }
+
+        for group_name, group_data in groups.items():
+
+            data["groups"][group_name] = {
+                "creator": group_data.get(
+                    "creator",
+                    ""
+                ),
+                "members": list(
+                    group_data.get(
+                        "members",
+                        set()
+                    )
+                )
+            }
+
+        with open(
+            DATA_FILE,
+            "w",
+            encoding="utf-8"
+        ) as file:
+
+            json.dump(
+                data,
+                file,
+                ensure_ascii=False,
+                indent=2
+            )
+
+    except Exception as e:
+
+        print(
+            f"Save data error: {e}"
+        )
+
+
+# =========================================================
+# شروع سرور
+# =========================================================
+
+load_data()
+
+
+# =========================================================
+# صفحه اصلی
+# =========================================================
+
 @app.get("/")
 def home():
+
     return {
         "app": "PayamYar",
         "status": "online"
     }
 
 
+# =========================================================
+# Health
+# =========================================================
+
 @app.get("/health")
 def health():
+
     return {
         "status": "ok",
         "online_users": len(users),
@@ -42,12 +195,23 @@ def health():
     }
 
 
+# =========================================================
+# کاربران آنلاین
+# =========================================================
+
 @app.get("/users")
 def get_users():
+
     return {
-        "users": list(users.keys())
+        "users": list(
+            users.keys()
+        )
     }
 
+
+# =========================================================
+# گروه‌ها
+# =========================================================
 
 @app.get("/groups")
 def get_groups():
@@ -75,6 +239,10 @@ def get_groups():
     }
 
 
+# =========================================================
+# دعوت آفلاین
+# =========================================================
+
 def add_pending_invite(
     username,
     group_name,
@@ -88,9 +256,13 @@ def add_pending_invite(
     for invite in pending_invites[username]:
 
         if (
-            invite.get("group") == group_name
-            and invite.get("added_by") == added_by
+            invite.get("group")
+            == group_name
+            and
+            invite.get("added_by")
+            == added_by
         ):
+
             return
 
     pending_invites[username].append({
@@ -98,6 +270,12 @@ def add_pending_invite(
         "added_by": added_by
     })
 
+    save_data()
+
+
+# =========================================================
+# ارسال دعوت‌های قبلی
+# =========================================================
 
 async def send_pending_invites(
     username,
@@ -154,6 +332,12 @@ async def send_pending_invites(
             None
         )
 
+    save_data()
+
+
+# =========================================================
+# WebSocket
+# =========================================================
 
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(
@@ -169,7 +353,6 @@ async def websocket_endpoint(
         f"{username} connected"
     )
 
-    # ارسال دعوت‌های قبلی
     await send_pending_invites(
         username,
         websocket
@@ -235,6 +418,8 @@ async def websocket_endpoint(
                     username
                 )
 
+                save_data()
+
                 await websocket.send_json({
                     "type": "group_joined",
                     "group": group_name
@@ -260,7 +445,6 @@ async def websocket_endpoint(
                 if not new_username:
                     continue
 
-                # ساخت گروه در صورت نبودن
                 if group_name not in groups:
 
                     groups[group_name] = {
@@ -270,12 +454,13 @@ async def websocket_endpoint(
 
                 group = groups[group_name]
 
-                # اضافه کردن عضو
                 group["members"].add(
                     new_username
                 )
 
-                # اگر کاربر آنلاین است
+                save_data()
+
+                # کاربر آنلاین
                 if new_username in users:
 
                     try:
@@ -298,14 +483,14 @@ async def websocket_endpoint(
 
                 else:
 
-                    # کاربر آفلاین است
+                    # کاربر آفلاین
                     add_pending_invite(
                         new_username,
                         group_name,
                         username
                     )
 
-                # اطلاع به اعضای آنلاین گروه
+                # اطلاع به اعضای آنلاین
                 for member in group["members"]:
 
                     if member == username:
@@ -362,6 +547,8 @@ async def websocket_endpoint(
                 group["members"].add(
                     username
                 )
+
+                save_data()
 
                 members = group[
                     "members"
