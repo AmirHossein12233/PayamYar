@@ -154,6 +154,10 @@ public class GroupChatActivity extends Activity {
         );
     }
 
+    // =========================================================
+    // نمایش اعضای گروه
+    // =========================================================
+
     private void showMembers() {
 
         List<String> members =
@@ -296,6 +300,10 @@ public class GroupChatActivity extends Activity {
         dialog.show();
     }
 
+    // =========================================================
+    // افزودن عضو
+    // =========================================================
+
     private void showAddMemberDialog() {
 
         EditText input =
@@ -393,7 +401,7 @@ public class GroupChatActivity extends Activity {
                                         username
                                 );
 
-                                sendJoinGroup(
+                                sendAddMember(
                                         username
                                 );
 
@@ -412,7 +420,7 @@ public class GroupChatActivity extends Activity {
         dialog.show();
     }
 
-    private void sendJoinGroup(
+    private void sendAddMember(
             String username
     ) {
 
@@ -447,6 +455,10 @@ public class GroupChatActivity extends Activity {
         } catch (Exception ignored) {
         }
     }
+
+    // =========================================================
+    // تاریخچه
+    // =========================================================
 
     private void loadHistory() {
 
@@ -532,6 +544,10 @@ public class GroupChatActivity extends Activity {
                 "شروع گفت‌وگو در گروه"
         );
     }
+
+    // =========================================================
+    // اتصال WebSocket
+    // =========================================================
 
     private void connectToServer() {
 
@@ -623,10 +639,15 @@ public class GroupChatActivity extends Activity {
                 );
     }
 
+    // =========================================================
+    // ورود به گروه
+    // =========================================================
+
     private void joinGroup() {
 
         if (webSocket == null
                 || groupName.isEmpty()) {
+
             return;
         }
 
@@ -653,6 +674,10 @@ public class GroupChatActivity extends Activity {
         }
     }
 
+    // =========================================================
+    // دریافت پیام‌های سرور
+    // =========================================================
+
     private void receiveMessage(
             String text
     ) {
@@ -668,12 +693,115 @@ public class GroupChatActivity extends Activity {
                             ""
                     );
 
+            // -----------------------------------------
+            // عضویت خودمان
+            // -----------------------------------------
+
             if (type.equals(
                     "group_joined"
             )) {
 
                 return;
             }
+
+            // -----------------------------------------
+            // اضافه شدن به گروه
+            // -----------------------------------------
+
+            if (type.equals(
+                    "group_added"
+            )) {
+
+                String addedGroup =
+                        json.optString(
+                                "group",
+                                ""
+                        );
+
+                String addedBy =
+                        json.optString(
+                                "added_by",
+                                ""
+                        );
+
+                if (addedGroup.isEmpty()) {
+                    return;
+                }
+
+                // اگر گروه روی گوشی وجود ندارد
+                if (!GroupStorage.groupExists(
+                        this,
+                        addedGroup
+                )) {
+
+                    GroupStorage.createGroup(
+                            this,
+                            addedGroup,
+                            addedBy
+                    );
+                }
+
+                // خود کاربر را عضو می‌کنیم
+                GroupStorage.addMember(
+                        this,
+                        addedGroup,
+                        currentUsername
+                );
+
+                Toast.makeText(
+                        this,
+                        "به گروه «"
+                                + addedGroup
+                                + "» اضافه شدید",
+                        Toast.LENGTH_LONG
+                ).show();
+
+                return;
+            }
+
+            // -----------------------------------------
+            // عضو جدید گروه
+            // -----------------------------------------
+
+            if (type.equals(
+                    "group_member_added"
+            )) {
+
+                String addedGroup =
+                        json.optString(
+                                "group",
+                                ""
+                        );
+
+                String username =
+                        json.optString(
+                                "username",
+                                ""
+                        );
+
+                if (!addedGroup.equals(
+                        groupName
+                )) {
+
+                    return;
+                }
+
+                if (username.isEmpty()) {
+                    return;
+                }
+
+                GroupStorage.addMember(
+                        this,
+                        groupName,
+                        username
+                );
+
+                return;
+            }
+
+            // -----------------------------------------
+            // پیام گروه
+            // -----------------------------------------
 
             if (!type.equals(
                     "group_message"
@@ -691,6 +819,7 @@ public class GroupChatActivity extends Activity {
             if (!group.equals(
                     groupName
             )) {
+
                 return;
             }
 
@@ -733,6 +862,10 @@ public class GroupChatActivity extends Activity {
         } catch (Exception ignored) {
         }
     }
+
+    // =========================================================
+    // ارسال پیام
+    // =========================================================
 
     private void sendMessage() {
 
@@ -817,6 +950,10 @@ public class GroupChatActivity extends Activity {
         }
     }
 
+    // =========================================================
+    // حباب پیام
+    // =========================================================
+
     private void addBubble(
             String username,
             String message,
@@ -895,11 +1032,18 @@ public class GroupChatActivity extends Activity {
                 12
         );
 
-        bubble.setBackgroundResource(
-                mine
-                        ? R.drawable.bubble_me
-                        : R.drawable.bubble_other
-        );
+        if (mine) {
+
+            bubble.setBackgroundResource(
+                    R.drawable.bubble_me
+            );
+
+        } else {
+
+            bubble.setBackgroundResource(
+                    R.drawable.bubble_other
+            );
+        }
 
         LinearLayout.LayoutParams bubbleParams =
                 new LinearLayout.LayoutParams(
@@ -929,6 +1073,10 @@ public class GroupChatActivity extends Activity {
 
         scrollToBottom();
     }
+
+    // =========================================================
+    // پیام سیستمی
+    // =========================================================
 
     private void addSystemMessage(
             String message
@@ -961,6 +1109,10 @@ public class GroupChatActivity extends Activity {
         );
     }
 
+    // =========================================================
+    // اسکرول پایین
+    // =========================================================
+
     private void scrollToBottom() {
 
         scrollChat.post(
@@ -970,6 +1122,10 @@ public class GroupChatActivity extends Activity {
                         )
         );
     }
+
+    // =========================================================
+    // پایان
+    // =========================================================
 
     @Override
     protected void onDestroy() {

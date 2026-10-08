@@ -15,16 +15,24 @@ import java.util.List;
 public class GroupsActivity extends Activity {
 
     private LinearLayout layoutGroups;
+
     private Button btnBack;
     private Button btnCreateGroup;
 
     private String currentUsername = "";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreate(
+            Bundle savedInstanceState
+    ) {
 
-        setContentView(R.layout.activity_groups);
+        super.onCreate(
+                savedInstanceState
+        );
+
+        setContentView(
+                R.layout.activity_groups
+        );
 
         currentUsername =
                 getSharedPreferences(
@@ -63,12 +71,18 @@ public class GroupsActivity extends Activity {
 
     @Override
     protected void onResume() {
+
         super.onResume();
 
         if (layoutGroups != null) {
+
             loadGroups();
         }
     }
+
+    // =========================================================
+    // نمایش گروه‌ها
+    // =========================================================
 
     private void loadGroups() {
 
@@ -85,10 +99,12 @@ public class GroupsActivity extends Activity {
                     new TextView(this);
 
             empty.setText(
-                    "هنوز گروهی ساخته نشده است"
+                    "هنوز گروهی ساخته یا دریافت نشده است"
             );
 
-            empty.setTextSize(17);
+            empty.setTextSize(
+                    17
+            );
 
             empty.setGravity(
                     Gravity.CENTER
@@ -110,30 +126,95 @@ public class GroupsActivity extends Activity {
 
         for (String groupName : groups) {
 
+            if (groupName == null
+                    || groupName.trim().isEmpty()) {
+
+                continue;
+            }
+
             addGroupItem(
                     groupName
             );
         }
     }
 
+    // =========================================================
+    // آیتم گروه
+    // =========================================================
+
     private void addGroupItem(
             String groupName
     ) {
 
-        Button button =
-                new Button(this);
+        LinearLayout item =
+                new LinearLayout(this);
 
-        button.setText(
-                "👥  " + groupName
+        item.setOrientation(
+                LinearLayout.VERTICAL
         );
 
-        button.setTextSize(17);
-
-        button.setGravity(
+        item.setGravity(
                 Gravity.CENTER_VERTICAL
         );
 
-        button.setOnClickListener(
+        item.setPadding(
+                16,
+                12,
+                16,
+                12
+        );
+
+        TextView title =
+                new TextView(this);
+
+        title.setText(
+                "👥  " + groupName
+        );
+
+        title.setTextSize(
+                18
+        );
+
+        title.setTextColor(
+                android.graphics.Color.BLACK
+        );
+
+        TextView members =
+                new TextView(this);
+
+        List<String> memberList =
+                GroupStorage.getMembers(
+                        this,
+                        groupName
+                );
+
+        members.setText(
+                memberList.size()
+                        + " عضو"
+        );
+
+        members.setTextSize(
+                13
+        );
+
+        members.setTextColor(
+                android.graphics.Color.DKGRAY
+        );
+
+        item.addView(
+                title
+        );
+
+        item.addView(
+                members
+        );
+
+        item.setBackgroundResource(
+                android.R.drawable
+                        .list_selector_background
+        );
+
+        item.setOnClickListener(
                 v -> openGroup(
                         groupName
                 )
@@ -146,17 +227,21 @@ public class GroupsActivity extends Activity {
                 );
 
         params.setMargins(
-                10,
+                8,
                 5,
-                10,
+                8,
                 5
         );
 
         layoutGroups.addView(
-                button,
+                item,
                 params
         );
     }
+
+    // =========================================================
+    // ساخت گروه
+    // =========================================================
 
     private void showCreateGroupDialog() {
 
@@ -167,7 +252,9 @@ public class GroupsActivity extends Activity {
                 "نام گروه"
         );
 
-        input.setSingleLine(true);
+        input.setSingleLine(
+                true
+        );
 
         int padding =
                 (int) (
@@ -189,7 +276,9 @@ public class GroupsActivity extends Activity {
                         .setTitle(
                                 "ساخت گروه جدید"
                         )
-                        .setView(input)
+                        .setView(
+                                input
+                        )
                         .setNegativeButton(
                                 "انصراف",
                                 null
@@ -225,6 +314,18 @@ public class GroupsActivity extends Activity {
                                     return;
                                 }
 
+                                if (GroupStorage.groupExists(
+                                        this,
+                                        groupName
+                                )) {
+
+                                    input.setError(
+                                            "این گروه قبلاً وجود دارد"
+                                    );
+
+                                    return;
+                                }
+
                                 GroupStorage.createGroup(
                                         this,
                                         groupName,
@@ -241,6 +342,10 @@ public class GroupsActivity extends Activity {
 
         dialog.show();
     }
+
+    // =========================================================
+    // باز کردن گروه
+    // =========================================================
 
     private void openGroup(
             String groupName

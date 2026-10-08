@@ -10,9 +10,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# کاربران آنلاین
 users = {}
 
+# گروه‌ها
 groups = {}
+
+# دعوت‌های منتظر
+# username -> list of invitations
+pending_invites = {}
 
 
 @app.get("/")
@@ -28,7 +34,11 @@ def health():
     return {
         "status": "ok",
         "online_users": len(users),
-        "groups": len(groups)
+        "groups": len(groups),
+        "pending_invites": sum(
+            len(items)
+            for items in pending_invites.values()
+        )
     }
 
 
@@ -65,6 +75,86 @@ def get_groups():
     }
 
 
+def add_pending_invite(
+    username,
+    group_name,
+    added_by
+):
+
+    if username not in pending_invites:
+
+        pending_invites[username] = []
+
+    for invite in pending_invites[username]:
+
+        if (
+            invite.get("group") == group_name
+            and invite.get("added_by") == added_by
+        ):
+            return
+
+    pending_invites[username].append({
+        "group": group_name,
+        "added_by": added_by
+    })
+
+
+async def send_pending_invites(
+    username,
+    websocket
+):
+
+    invites = pending_invites.get(
+        username,
+        []
+    )
+
+    if not invites:
+        return
+
+    remaining = []
+
+    for invite in invites:
+
+        group_name = invite.get(
+            "group",
+            ""
+        )
+
+        added_by = invite.get(
+            "added_by",
+            ""
+        )
+
+        if not group_name:
+            continue
+
+        try:
+
+            await websocket.send_json({
+                "type": "group_added",
+                "group": group_name,
+                "added_by": added_by
+            })
+
+        except Exception:
+
+            remaining.append(
+                invite
+            )
+
+    if remaining:
+
+        pending_invites[username] = remaining
+
+    else:
+
+        pending_invites.pop(
+            username,
+            None
+        )
+
+
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(
     websocket: WebSocket,
@@ -79,6 +169,12 @@ async def websocket_endpoint(
         f"{username} connected"
     )
 
+    # ارسال دعوت‌های قبلی
+    await send_pending_invites(
+        username,
+        websocket
+    )
+
     try:
 
         while True:
@@ -90,9 +186,9 @@ async def websocket_endpoint(
                 "message"
             )
 
-            # ==============================
+            # =================================================
             # پیام خصوصی
-            # ==============================
+            # =================================================
 
             if message_type == "message":
 
@@ -115,9 +211,9 @@ async def websocket_endpoint(
                         "message": message
                     })
 
-            # ==============================
+            # =================================================
             # ورود به گروه
-            # ==============================
+            # =================================================
 
             elif message_type == "join_group":
 
@@ -144,9 +240,9 @@ async def websocket_endpoint(
                     "group": group_name
                 })
 
-            # ==============================
-            # اضافه کردن عضو
-            # ==============================
+            # =================================================
+            # افزودن عضو
+            # =================================================
 
             elif message_type == "add_group_member":
 
@@ -164,6 +260,7 @@ async def websocket_endpoint(
                 if not new_username:
                     continue
 
+                # ساخت گروه در صورت نبودن
                 if group_name not in groups:
 
                     groups[group_name] = {
@@ -173,25 +270,48 @@ async def websocket_endpoint(
 
                 group = groups[group_name]
 
+                # اضافه کردن عضو
                 group["members"].add(
                     new_username
                 )
 
-                # اطلاع به عضو جدید
+                # اگر کاربر آنلاین است
                 if new_username in users:
 
-                    await users[
-                        new_username
-                    ].send_json({
-                        "type": "group_added",
-                        "group": group_name,
-                        "added_by": username
-                    })
+                    try:
 
-                # اطلاع به اعضای آنلاین
+                        await users[
+                            new_username
+                        ].send_json({
+                            "type": "group_added",
+                            "group": group_name,
+                            "added_by": username
+                        })
+
+                    except Exception:
+
+                        add_pending_invite(
+                            new_username,
+                            group_name,
+                            username
+                        )
+
+                else:
+
+                    # کاربر آفلاین است
+                    add_pending_invite(
+                        new_username,
+                        group_name,
+                        username
+                    )
+
+                # اطلاع به اعضای آنلاین گروه
                 for member in group["members"]:
 
                     if member == username:
+                        continue
+
+                    if member == new_username:
                         continue
 
                     if member not in users:
@@ -210,9 +330,9 @@ async def websocket_endpoint(
                     except Exception:
                         pass
 
-            # ==============================
+            # =================================================
             # پیام گروه
-            # ==============================
+            # =================================================
 
             elif message_type == "group_message":
 
@@ -243,7 +363,9 @@ async def websocket_endpoint(
                     username
                 )
 
-                members = group["members"].copy()
+                members = group[
+                    "members"
+                ].copy()
 
                 for member in members:
 
