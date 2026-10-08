@@ -1,0 +1,84 @@
+{
+    "logs": [
+        {
+            "outputFile": "C:\\Users\\IranSystem\\.gradle\\daemon\\8.10.2\\com.payamyar.app-debug-4:\\values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "C:\\Users\\IranSystem\\Downloads\\PayamYar_Stage1\\app\\src\\main\\res\\values\\strings.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "4",
+                        "startOffsets": "16",
+                        "endColumns": "45",
+                        "endOffsets": "57"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "45",
+                        "endOffsets": "96"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\IranSystem\\Downloads\\PayamYar_Stage1\\app\\src\\main\\res\\values\\styles.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "4",
+                        "startOffsets": "16",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "272"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "101",
+                        "endLines": "7",
+                        "endColumns": "12",
+                        "endOffsets": "357"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "com.payamyar.app-debug-4:/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "C:\\Users\\IranSystem\\Downloads\\PayamYar_Stage1\\app\\src\\main\\res\\values\\strings.xml",
+                    "from": {
+                        "startLines": "-1",
+                        "startColumns": "-1",
+                        "startOffsets": "-1"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "45",
+                        "endOffsets": "96"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\IranSystem\\Downloads\\PayamYar_Stage1\\app\\src\\main\\res\\values\\styles.xml",
+                    "from": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "56",
+                        "endLines": "7",
+                        "endColumns": "12",
+                        "endOffsets": "325"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "101",
+                        "endLines": "7",
+                        "endColumns": "12",
+                        "endOffsets": "370"
+                    }
+                }
+            ]
+        }
+    ]
+}

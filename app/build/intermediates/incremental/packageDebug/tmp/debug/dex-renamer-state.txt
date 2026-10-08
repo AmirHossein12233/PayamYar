@@ -1,0 +1,7 @@
+#Thu Oct 08 12:38:50 IRST 2026
+base.0=C\:\\Users\\IranSystem\\Downloads\\PayamYar_Stage1\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex
+base.1=C\:\\Users\\IranSystem\\Downloads\\PayamYar_Stage1\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\5\\classes.dex
+path.0=0/classes.dex
+path.1=5/classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex

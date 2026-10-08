@@ -1,0 +1,14 @@
+com.payamyar.app:style/AppTheme = 0x7f040000
+com.payamyar.app:string/app_name = 0x7f030000
+com.payamyar.app:layout/activity_register = 0x7f020002
+com.payamyar.app:layout/activity_main = 0x7f020001
+com.payamyar.app:id/edtName = 0x7f010004
+com.payamyar.app:id/txtLogin = 0x7f010007
+com.payamyar.app:id/edtPassword = 0x7f010005
+com.payamyar.app:id/edtLoginPassword = 0x7f010002
+com.payamyar.app:id/edtLoginUsername = 0x7f010003
+com.payamyar.app:layout/activity_login = 0x7f020000
+com.payamyar.app:id/txtRegister = 0x7f010008
+com.payamyar.app:id/btnRegister = 0x7f010001
+com.payamyar.app:id/edtUsername = 0x7f010006
+com.payamyar.app:id/btnLogin = 0x7f010000
